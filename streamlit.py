@@ -1,4 +1,20 @@
+
+
 import streamlit as st
+import pandas as pd
+
+# Dataset URL
+data_url = "https://raw.githubusercontent.com/JohannaViktor/streamlit_practical/refs/heads/main/global_development_data.csv"
+
+# Load dataset
+@st.cache_data
+def load_data():
+    df = pd.read_csv(data_url)
+    return df
+
+df = load_data()
+
+tab1, tab2, tab3 = st.tabs(["Global Overview", "Country Deep Dive", "Data Explorer"])
 
 
 # Use full width layout
@@ -33,5 +49,45 @@ with tab2:
 
 # Tab 3
 with tab3:
-    st.subheader("Data Explorer")
-    st.write("Interact with the raw dataset.")
+    st.subheader("Explore the Dataset")
+
+    # Show full dataset
+    st.dataframe(df, use_container_width=True)
+
+    # Country filter
+    countries = st.multiselect(
+        "Select countries",
+        options=sorted(df["country"].unique()),
+        default=sorted(df["country"].unique())[:5]
+    )
+
+    # Year range slider
+    min_year = int(df["year"].min())
+    max_year = int(df["year"].max())
+
+    year_range = st.slider(
+        "Select year range",
+        min_year,
+        max_year,
+        (min_year, max_year)
+    )
+
+    # Filter data
+    filtered_df = df[
+        (df["country"].isin(countries)) &
+        (df["year"] >= year_range[0]) &
+        (df["year"] <= year_range[1])
+    ]
+
+    st.subheader("Filtered Dataset")
+    st.dataframe(filtered_df, use_container_width=True)
+
+    # Download filtered data
+    csv = filtered_df.to_csv(index=False)
+
+    st.download_button(
+        "Download filtered data",
+        data=csv,
+        file_name="filtered_data.csv",
+        mime="text/csv"
+    )
